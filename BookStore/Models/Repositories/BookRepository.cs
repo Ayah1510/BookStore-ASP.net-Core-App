@@ -23,6 +23,7 @@
         }
         public void Add(Book entity)
         {
+            entity.ID = books.Max(x => x.ID) + 1;
             books.Add(entity);
         }
 

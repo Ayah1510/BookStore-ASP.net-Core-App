@@ -3,6 +3,7 @@ using BookStore.Models.Repositories;
 using BookStore.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IWebHostEnvironment;
 
 namespace BookStore.Controllers
 {
@@ -10,11 +11,14 @@ namespace BookStore.Controllers
     {
         private readonly IBooksStoreRepository<Book> bookRepository;
         private readonly IBooksStoreRepository<Author> authorRepository;
+        private readonly IHostingEnvironment hosting;
 
-        public BookController(IBooksStoreRepository<Book> bookRepository, IBooksStoreRepository<Author> authorRepository)
+        public BookController(IBooksStoreRepository<Book> bookRepository, IBooksStoreRepository<Author> authorRepository,
+           IHostingEnvironment hosting)
         {
             this.bookRepository = bookRepository;
             this.authorRepository = authorRepository;
+            this.hosting = hosting;
         }
         // GET: BookController
         public ActionResult Index()
@@ -45,32 +49,51 @@ namespace BookStore.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(BookAuthorViewModel model)
         {
-            try
-            {
-                if(model.AuthorID == -1)
+            if (ModelState.IsValid) {
+                try
                 {
-                    ViewBag.Message = "Please select an author from the list!";
-                    var vmodel = new BookAuthorViewModel
+                    string fileName = string.Empty;
+                    if(model.File != null)
                     {
-                        Authors = FillList()
-                    };
-                    return View(vmodel);
-                }
-                Book book = new Book
-                {
-                    ID = model.BookId,
-                    Title = model.Title,
-                    Description = model.Description,
-                    Author = authorRepository.Find(model.AuthorID)
+                        string uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                        fileName = model.File.FileName;
+                        string fullPath = Path.Combine(uploads, fileName);
+                        model.File.CopyTo(new FileStream(fullPath,FileMode.Create));
+                    }
+                    if (model.AuthorID == -1)
+                    {
+                        ViewBag.Message = "Please select an author from the list!";
+                        var vmodel = new BookAuthorViewModel
+                        {
+                            Authors = FillList()
+                        };
+                        return View(vmodel);
+                    }
+                    Book book = new Book
+                    {
+                        ID = model.BookId,
+                        Title = model.Title,
+                        Description = model.Description,
+                        Author = authorRepository.Find(model.AuthorID),
+                        ImgageURL = fileName
 
-                };
-                bookRepository.Add(book);
-                return RedirectToAction(nameof(Index));
+                    };
+                    bookRepository.Add(book);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch
+                {
+                    return View();
+                }
+                
             }
-            catch
+            var vmodel2 = new BookAuthorViewModel
             {
-                return View();
-            }
+                Authors = FillList()
+            };
+            ModelState.AddModelError("", "You have to fill all the required fields!");
+            return View(vmodel2);
+
         }
 
         // GET: BookController/Edit/5

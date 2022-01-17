@@ -23,6 +23,9 @@
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Author.FullName)
+            </th
+             <th>
+                Image
             </th>
             <th></th>
         </tr>
@@ -41,6 +44,9 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Author.FullName)
+            </td>
+            <td>
+                <img src="~/uploads/@item.ImgageURL" style="width:64px;" class="img-thumbnail" />
             </td>
             <td>
                 @Html.ActionLink("Edit", "Edit", new { id=item.ID }) |
